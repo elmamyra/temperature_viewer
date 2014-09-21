@@ -140,7 +140,6 @@ class TemperatureViewer(QMainWindow):
         self.ax.grid(b=True, which='major', color=(0.4,0.4,0.4), linestyle='--')
         self.ax.grid(b=True, which='minor', color=(0.6,0.6,0.6), linestyle=':')
         self.ax.set_autoscalex_on(False) 
-        self.fig.autofmt_xdate()
 
     def plot(self):
         checkedGraph = self.dialogChoice.getChecked()
