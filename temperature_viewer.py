@@ -39,6 +39,8 @@ class TemperatureViewer(QMainWindow):
     def readSettings(self):
         s = QSettings()
         choiceState = True if s.value('dialogChoiceState', 'true') == 'true' else False
+        hour = int(s.value('hour', 0))
+        self.dateEdit.setTime(QTime(hour, 0, 0))
         if choiceState:
             self.dialogChoice.show()
         self.dialogChoice.setGeometry(s.value('dialogChoiceGeometry', self.dialogChoice.geometry()))
@@ -53,7 +55,9 @@ class TemperatureViewer(QMainWindow):
             'table': s.value('table', 'releves')}
         if not s.allKeys():
             self.connectAction.trigger()
-            
+        
+        
+        
         s.beginGroup('colors')
         self.idToColors = {}
         for i, index in enumerate(ID_TO_NAME.keys()):
@@ -93,8 +97,12 @@ class TemperatureViewer(QMainWindow):
         if not self.testConnection():
             return
         
-        start = self.dateEdit.date()
         period = self.comboPeriod.currentIndex()
+        if period == DAY:
+            start = self.dateEdit.dateTime()
+        else:
+            start = self.dateEdit.date()
+            
         if period == WEEK:
             end = start.addDays(7)
         else:
@@ -244,6 +252,7 @@ class TemperatureViewer(QMainWindow):
         s.setValue('geometry', self.saveGeometry())
         s.setValue('dialogChoiceState', self.dialogChoice.isVisible())
         s.setValue('dialogChoiceGeometry', self.dialogChoice.geometry())
+        s.setValue('hour', self.dateEdit.time().hour())
     
     def slotCanvasPressed(self, e):
         if int(e.xdata):
@@ -322,11 +331,11 @@ class TemperatureViewer(QMainWindow):
             self.comboPeriod.addItem(text, data)
         self.comboPeriod.currentIndexChanged.connect(self.slotPeriodChanged)
         
-        format_ = "ddd dd MMM yyyy"
-        self.dateEdit = QDateEdit()
+        format_ = "ddd dd MMM yyyy HH'h'"
+        self.dateEdit = QDateTimeEdit()
         self.dateEdit.setDisplayFormat(format_)
         self.dateEdit.setCalendarPopup(True)
-        self.dateEdit.setMinimumWidth(150)
+        self.dateEdit.setMinimumWidth(180)
         self.dateEdit.calendarWidget().clicked .connect(self.slotCalendar)
         
         toolbar.addAction(quitAction)
