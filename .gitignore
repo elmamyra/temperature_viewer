@@ -1,1 +1,7 @@
+resource
 *.png
+*.qrc
+*.pyc
+.project
+.pydevproject
+.settings
