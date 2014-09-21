@@ -31,15 +31,19 @@ class TemperatureViewer(QMainWindow):
         self.lineList = []
         self.ax = None
         self.show()
-        self.readSettings()
         self.dialogChoice = DialogChoice(self)
         self.dialogChoice.checked.connect(self.slotGraphChecked)
-        self.dialogChoice.show()
+        self.readSettings()
         self._isConnected = self.connectDb()
     
     def readSettings(self):
         s = QSettings()
-        self.restoreGeometry(s.value( "geometry", self.saveGeometry()))
+        choiceState = True if s.value('dialogChoiceState', 'true') == 'true' else False
+        if choiceState:
+            self.dialogChoice.show()
+        self.dialogChoice.setGeometry(s.value('dialogChoiceGeometry', self.dialogChoice.geometry()))
+            
+        self.restoreGeometry(s.value('geometry', self.saveGeometry()))
         s.beginGroup('connexion')
         self.connData = {
             'host': s.value('host', 'localhost'),
@@ -238,6 +242,8 @@ class TemperatureViewer(QMainWindow):
     def closeEvent(self, event):
         s = QSettings()
         s.setValue('geometry', self.saveGeometry())
+        s.setValue('dialogChoiceState', self.dialogChoice.isVisible())
+        s.setValue('dialogChoiceGeometry', self.dialogChoice.geometry())
     
     def slotCanvasPressed(self, e):
         if int(e.xdata) and e.button == 3:
@@ -340,22 +346,6 @@ class TemperatureViewer(QMainWindow):
         layout.addWidget(self.canvas)
         centralWidget.setLayout(layout)
         
-
-# class Navigation(NavigationToolbar2QT):
-#     def __init__(self, canvas, parent):
-#         NavigationToolbar2QT.__init__(self, canvas, parent)
-#         
-#     def release_zoom(self, event):
-#         print 'zoom', event
-#         NavigationToolbar2QT.release_zoom(self, event)
-#     
-#     def back(self, *args):
-#         print 'back', args
-#         NavigationToolbar2QT.back(self, *args)
-#     
-#     def home(self, *args):
-#         print args
-#         NavigationToolbar2QT.home(self, *args)
 
 app = QApplication(sys.argv)
 translatorQt=QTranslator ()
