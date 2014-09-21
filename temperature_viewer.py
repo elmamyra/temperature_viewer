@@ -39,8 +39,6 @@ class TemperatureViewer(QMainWindow):
     def readSettings(self):
         s = QSettings()
         choiceState = True if s.value('dialogChoiceState', 'true') == 'true' else False
-        hour = int(s.value('hour', 0))
-        self.dateEdit.setTime(QTime(hour, 0, 0))
         if choiceState:
             self.dialogChoice.show()
         self.dialogChoice.setGeometry(s.value('dialogChoiceGeometry', self.dialogChoice.geometry()))
@@ -252,7 +250,6 @@ class TemperatureViewer(QMainWindow):
         s.setValue('geometry', self.saveGeometry())
         s.setValue('dialogChoiceState', self.dialogChoice.isVisible())
         s.setValue('dialogChoiceGeometry', self.dialogChoice.geometry())
-        s.setValue('hour', self.dateEdit.time().hour())
     
     def slotCanvasPressed(self, e):
         if int(e.xdata):
