@@ -246,7 +246,7 @@ class TemperatureViewer(QMainWindow):
         s.setValue('dialogChoiceGeometry', self.dialogChoice.geometry())
     
     def slotCanvasPressed(self, e):
-        if int(e.xdata) and e.button == 3:
+        if int(e.xdata):
             dt = QDateTime.fromTime_t(mdates.num2epoch(e.xdata)).date()
             monday = QDate(dt)
             while monday.dayOfWeek() != 1:
