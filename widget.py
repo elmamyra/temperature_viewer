@@ -21,3 +21,37 @@ class Separator(QFrame):
         
     def orientation(self):
         return Qt.Vertical if self.frameStyle() & QFrame.VLine == QFrame.VLine else Qt.Horizontal
+    
+    
+
+class ColorPicker(QPushButton):
+    colorChanged = Signal(str)
+    def __init__(self, color=""):
+        QPushButton.__init__(self)
+        self.setObjectName("pickerButton")
+        self.setColor(color)
+        self.setMaximumWidth(32)
+        self.pressed.connect(self.onColorPicker)
+        
+    def setColor(self, color):
+        self._color = color
+        self.colorChanged.emit(color)
+        if self._color:
+            self.setStyleSheet("""QPushButton#pickerButton {{ background-color: {}; 
+            border: 2px solid #8f8f91;
+             border-radius: 6px;}}""".format(self._color))
+        else:
+            self.setStyleSheet("""QPushButton#pickerButton { border: 2px solid #8f8f91;
+             border-radius: 6px;}""")
+            
+    def color(self):
+        return self._color
+    
+    def onColorPicker(self):
+        qcolor = QColor()
+        qcolor.setNamedColor(self._color)
+        dlg = QColorDialog(qcolor, self)
+        
+        if dlg.exec_():
+            self.setColor(dlg.currentColor().name())
+            self.clearFocus()

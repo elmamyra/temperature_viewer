@@ -4,6 +4,7 @@ from PySide.QtGui import *  # @UnusedWildImport
 from dialogConnect import DialogConnect
 from dialogChoice import DialogChoice
 from dialogLimit import DialogLimit
+from dialogLineStyle import DialogLineStyle
 import os
 os.environ["QT_API"] = "pyside"
 import matplotlib
@@ -29,6 +30,8 @@ class TemperatureViewer(QMainWindow):
         self.conn = self.cur = None
         self.connData = None
         self.currentData = []
+        self.limitData = {}
+        self.lineStyleData = {}
         self.lineList = []
         self.ax = None
 #         self.ax = self.axMillis = self.axPchauf = self.axMoi = None
@@ -46,6 +49,11 @@ class TemperatureViewer(QMainWindow):
             self.dialogChoice.show()
         self.dialogChoice.setGeometry(s.value('dialogChoiceGeometry', self.dialogChoice.geometry()))
         
+        defaultColors = {}
+        for i, graphId in enumerate(ID_TO_NAME.keys()):
+            defaultColors[graphId] = (COLORS[i], 1, '-')
+        
+        self.lineStyleData = s.value('lineStyle', defaultColors)
         
         self.restoreGeometry(s.value('geometry', self.saveGeometry()))
         
@@ -65,12 +73,6 @@ class TemperatureViewer(QMainWindow):
         if not s.allKeys():
             self.connectAction.trigger()
         
-        
-        
-        s.beginGroup('colors')
-        self.idToColors = {}
-        for i, index in enumerate(ID_TO_NAME.keys()):
-            self.idToColors[index] = s.value(str(index), COLORS[i])
       
     def connectDb(self):
         if not self.connData:
@@ -179,7 +181,8 @@ class TemperatureViewer(QMainWindow):
         labels = []
         
         for graphId in checkedGraph:
-            clr = self.idToColors[graphId]
+            clr, width, style = self.lineStyleData[graphId]
+#             clr = self.idToColors[graphId]
             if graphId in specialGraph:
                 
                 ax = self.ax.twinx()
@@ -194,8 +197,9 @@ class TemperatureViewer(QMainWindow):
                     ax.set_ylim(*self.limitData[graphId])
             else:
                 ax = self.ax
+            
             meth = ax.step if graphId == HC else ax.plot
-            l = meth(self.datetimeData, self.currentData[graphId], color=clr)
+            l = meth(self.datetimeData, self.currentData[graphId], color=clr, linewidth=width, linestyle=style)
             self.lineList.append(l[0])
             patchs.append(mpatches.Patch(color=clr))
             labels.append(ID_TO_NAME[graphId])
@@ -276,6 +280,7 @@ class TemperatureViewer(QMainWindow):
         s.setValue('dialogChoiceState', self.choiceAction.isChecked())
         s.setValue('dialogChoiceGeometry', self.dialogChoice.geometry())
         s.setValue('date', self.dateEdit.date())
+        s.setValue('lineStyle', self.lineStyleData)
         s.beginGroup('limit')
         
         for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (HC, 'hc'), (MOI, 'moi')):
@@ -342,6 +347,12 @@ class TemperatureViewer(QMainWindow):
     def slotCalendar(self):
         self.canvas.setFocus()
         self.run()
+        
+    def slotLineStyle(self):
+        dlg = DialogLineStyle(self, self.lineStyleData)
+        if dlg.exec_():
+            self.lineStyleData = dlg.getData()
+            self.run()
     
     def setupUi(self):
         def addGlobalAction(seq, slot):
@@ -364,9 +375,8 @@ class TemperatureViewer(QMainWindow):
         previousAction = QAction(QIcon(":/icon/previous"), u"Date précédante", self, triggered=self.slotPreviousDate)
         nextAction = QAction(QIcon(":/icon/next"), u"Date suivante", self, triggered=self.slotNextDate)
         self.choiceAction = QAction(QIcon(":/icon/check"), u"Choix des graphiques", self, triggered=self.slotChoice, checkable=True)
-        
         yLimAction = QAction(QIcon(":/icon/slider"), u"Échelles", self, triggered=self.slotYlim)
-#         buttonChoice = QPushButton('Tables', clicked=self.slotChoice)
+        lineStyleAction = QAction(QIcon(":/icon/line"), u"Style de lignes", self, triggered=self.slotLineStyle)
         addGlobalAction(Qt.CTRL + Qt.Key_Space, self.slotToggleChoiceCheck)
         addGlobalAction(Qt.Key_Left, self.slotPreviousDate)
         addGlobalAction(Qt.Key_Right, self.slotNextDate)
@@ -394,6 +404,7 @@ class TemperatureViewer(QMainWindow):
         toolbar.addAction(nextAction)
         toolbar.addSeparator()
         toolbar.addAction(yLimAction)
+        toolbar.addAction(lineStyleAction)
         self.addToolBar(toolbar)
         
         self.fig = Figure(facecolor=(1,1,1), edgecolor=(0,0,0))
