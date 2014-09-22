@@ -277,7 +277,7 @@ class TemperatureViewer(QMainWindow):
                 s.setValue(text+'Max', None)
                 
     def slotCanvasPressed(self, e):
-        if e.xdata and int(e.xdata):
+        if e.xdata and int(e.xdata) and e.button == 3:
             dt = QDateTime.fromTime_t(mdates.num2epoch(e.xdata)).date()
             monday = QDate(dt)
             while monday.dayOfWeek() != 1:
