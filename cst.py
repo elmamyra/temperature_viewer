@@ -2,7 +2,7 @@
 from collections import OrderedDict
 
 
-DATE_TIME, MILLIS, T_EXT, T_INT, T_ENT, T_SOR, T_CON, PCHAUF, HC, MOI, TMOI = range(11)
+DATE_TIME, MILLIS, T_EXT, T_INT, T_ENT, T_SOR, T_CON, PCHAUF, HC, MOI, TMOI, TEMP = range(12)
 
 TABLE_NAME = ('millis', 't_ext', 't_int', 't_ent', 
               't_sor', 't_con', 'pchauf', 'hc', 'moi', 'tmoi')
@@ -16,7 +16,9 @@ ID_TO_NAME = OrderedDict([(MILLIS, u'compteur de millisecondes'),
              (PCHAUF, u'puissance'),
              (HC, u'heures creuses/pleines'),
              (MOI, u'capteur d\'humidité'),
-             (TMOI, u'température du capteur')]
+             (TMOI, u'température du capteur'),
+             ]
+                         
             )
 
 

@@ -2,7 +2,7 @@
 from PySide.QtCore import *  # @UnusedWildImport
 from PySide.QtGui import *  # @UnusedWildImport
 from cst import *  # @UnusedWildImport
-
+from widget import Separator
 
 class DialogChoice(QDialog):
     checked = Signal()
@@ -21,6 +21,7 @@ class DialogChoice(QDialog):
             layout.addWidget(cb)
             
         buttonBox = QDialogButtonBox(QDialogButtonBox.Close, rejected=self.close)
+        layout.addWidget(Separator())
         layout.addWidget(buttonBox)
         
         self.group.buttonClicked.connect(self.slotChecked)

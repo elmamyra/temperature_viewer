@@ -3,6 +3,7 @@ from PySide.QtCore import *  # @UnusedWildImport
 from PySide.QtGui import *  # @UnusedWildImport
 from dialogConnect import DialogConnect
 from dialogChoice import DialogChoice
+from dialogLimit import DialogLimit
 import os
 os.environ["QT_API"] = "pyside"
 import matplotlib
@@ -30,6 +31,7 @@ class TemperatureViewer(QMainWindow):
         self.currentData = []
         self.lineList = []
         self.ax = None
+#         self.ax = self.axMillis = self.axPchauf = self.axMoi = None
         self.show()
         self.dialogChoice = DialogChoice(self)
         self.dialogChoice.checked.connect(self.slotGraphChecked)
@@ -40,10 +42,18 @@ class TemperatureViewer(QMainWindow):
         s = QSettings()
         choiceState = True if s.value('dialogChoiceState', 'true') == 'true' else False
         if choiceState:
+            self.choiceAction.setChecked(True)
             self.dialogChoice.show()
         self.dialogChoice.setGeometry(s.value('dialogChoiceGeometry', self.dialogChoice.geometry()))
             
         self.restoreGeometry(s.value('geometry', self.saveGeometry()))
+        
+        s.beginGroup('limit')
+        self.limitData = {}
+        for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (MOI, 'moi')):
+            self.limitData[graphId] = (int(s.value(text+'Min')), int(s.value(text+'Max'))) if s.value(text+'Min') else None
+        
+        s.endGroup()
         s.beginGroup('connexion')
         self.connData = {
             'host': s.value('host', 'localhost'),
@@ -128,6 +138,9 @@ class TemperatureViewer(QMainWindow):
         self.ax.plot(self.datetimeData, [None]*len(self.datetimeData))
         self.fig.add_subplot(self.ax)
         self.fig.set_tight_layout(True)
+        if self.limitData[TEMP]:
+            self.ax.set_ylim(*self.limitData[TEMP])
+        
         
     def createLocator(self):
         if self.currentPeriod() == DAY:
@@ -160,6 +173,7 @@ class TemperatureViewer(QMainWindow):
         offset = 0
         patchs = []
         labels = []
+        
         for graphId in checkedGraph:
             clr = self.idToColors[graphId]
             if graphId in specialGraph:
@@ -172,6 +186,8 @@ class TemperatureViewer(QMainWindow):
                 offset += 60
                 ax.set_ylabel(ID_TO_NAME[graphId])
                 ax.yaxis.label.set_color(clr)
+                if self.limitData[graphId]:
+                    ax.set_ylim(*self.limitData[graphId])
             else:
                 ax = self.ax
             meth = ax.step if graphId == HC else ax.plot
@@ -202,7 +218,7 @@ class TemperatureViewer(QMainWindow):
             return False
     
     def slotChoice(self):
-        if self.dialogChoice.isHidden():
+        if self.choiceAction.isChecked():
             self.dialogChoice.show()
         else:
             self.dialogChoice.close()
@@ -248,11 +264,20 @@ class TemperatureViewer(QMainWindow):
     def closeEvent(self, event):
         s = QSettings()
         s.setValue('geometry', self.saveGeometry())
-        s.setValue('dialogChoiceState', self.dialogChoice.isVisible())
+        s.setValue('dialogChoiceState', self.choiceAction.isChecked())
         s.setValue('dialogChoiceGeometry', self.dialogChoice.geometry())
-    
+        s.beginGroup('limit')
+        for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (MOI, 'moi')):
+            d = self.limitData[graphId]
+            if d:
+                s.setValue(text+'Min', d[0])
+                s.setValue(text+'Max', d[1])
+            else:
+                s.setValue(text+'Min', None)
+                s.setValue(text+'Max', None)
+                
     def slotCanvasPressed(self, e):
-        if int(e.xdata):
+        if e.xdata and int(e.xdata):
             dt = QDateTime.fromTime_t(mdates.num2epoch(e.xdata)).date()
             monday = QDate(dt)
             while monday.dayOfWeek() != 1:
@@ -295,6 +320,13 @@ class TemperatureViewer(QMainWindow):
             self.setPeriod(period)  
             self.run()
     
+    def slotYlim(self):
+        dlg = DialogLimit(self, self.limitData)
+        if dlg.exec_():
+            self.limitData = dlg.getData()
+            print self.limitData
+            self.run()
+    
     def slotCalendar(self):
         self.run()
     
@@ -314,12 +346,14 @@ class TemperatureViewer(QMainWindow):
         self.setWindowIcon(QIcon(":/icon/graph"))
         toolbar = QToolBar(self)
         quitAction = QAction(QIcon(":/icon/quit"), u'Quitter', self, triggered=self.close)
+        runAction = QAction(QIcon(":/icon/exec"), u'Afficher la courbe', self, triggered=self.run)
         self.connectAction = QAction(QIcon(":/icon/connect"), u'Paramètre de connection', self, triggered=self.slotConnect)
         previousAction = QAction(QIcon(":/icon/previous"), u"Date précédante", self, triggered=self.slotPreviousDate)
         nextAction = QAction(QIcon(":/icon/next"), u"Date suivante", self, triggered=self.slotNextDate)
-        runAction = QAction(QIcon(":/icon/exec"), u'Afficher la courbe', self, triggered=self.run)
+        self.choiceAction = QAction(QIcon(":/icon/check"), u"Choix des graphiques", self, triggered=self.slotChoice, checkable=True)
         
-        buttonChoice = QPushButton('Tables', clicked=self.slotChoice)
+        yLimAction = QAction(QIcon(":/icon/slider"), u"Échelles", self, triggered=self.slotYlim)
+#         buttonChoice = QPushButton('Tables', clicked=self.slotChoice)
         addGlobalAction(Qt.CTRL + Qt.Key_Space, self.slotChoice)
         addGlobalAction(Qt.Key_Left, self.slotPreviousDate)
         addGlobalAction(Qt.Key_Right, self.slotNextDate)
@@ -340,10 +374,13 @@ class TemperatureViewer(QMainWindow):
         toolbar.addSeparator()
         toolbar.addWidget(self.dateEdit)
         toolbar.addAction(runAction)
-        toolbar.addWidget(buttonChoice)
+        toolbar.addSeparator()
+        toolbar.addAction(self.choiceAction)
         toolbar.addWidget(self.comboPeriod)
         toolbar.addAction(previousAction)
         toolbar.addAction(nextAction)
+        toolbar.addSeparator()
+        toolbar.addAction(yLimAction)
         self.addToolBar(toolbar)
         
         self.fig = Figure(facecolor=(1,1,1), edgecolor=(0,0,0))
