@@ -44,24 +44,22 @@ class Picker(QGroupBox):
         
         
 class DialogLimit(QDialog):
+    applied = Signal(dict)
     def __init__(self, parent, data):
         QDialog.__init__(self, parent)
         self.setWindowTitle(u'Échelles')
         
         layout = QVBoxLayout(self)
-#         self.formLayout = QFormLayout()
         self.tempPicker = Picker(TEMP, data[TEMP], -10, 30, u"température")
         self.millisPicker = Picker(MILLIS, data[MILLIS], 0, 200, u"compteur de millisecondes (×10e7)", 10**7)
         self.pchaufPicker = Picker(PCHAUF, data[PCHAUF], 0, 256)
         self.hcPicker = Picker(HC, data[HC], 0, 10)
         self.moiPicker = Picker(MOI, data[MOI], 30, 90)
         
-        
-        
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok,
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok | QDialogButtonBox.Apply,
                                       accepted=self.accept, rejected=self.reject)
         
-        
+        self.buttonBox.clicked.connect(self.slotButtonBox)
         
         layout.addWidget(self.tempPicker)
         layout.addWidget(self.millisPicker)
@@ -69,8 +67,12 @@ class DialogLimit(QDialog):
         layout.addWidget(self.hcPicker)
         layout.addWidget(self.moiPicker)
         layout.addWidget(Separator())
-        layout.addWidget(buttonBox)
-        
+        layout.addWidget(self.buttonBox)
+    
+    def slotButtonBox(self, btn):
+        if self.buttonBox.buttonRole(btn) == QDialogButtonBox.ApplyRole:
+            self.applied.emit(self.getData())
+    
     def getData(self):
         return {TEMP: self.tempPicker.getData(),
                 MILLIS: self.millisPicker.getData(),

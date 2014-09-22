@@ -57,10 +57,11 @@ class TemperatureViewer(QMainWindow):
         
         self.restoreGeometry(s.value('geometry', self.saveGeometry()))
         
-        s.beginGroup('limit')
-        self.limitData = {}
-        for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (HC, 'hc'), (MOI, 'moi')):
-            self.limitData[graphId] = (int(s.value(text+'Min')), int(s.value(text+'Max'))) if s.value(text+'Min') else None
+#         s.beginGroup('limit')
+        defaultLimit = {TEMP: None, MILLIS: None, PCHAUF: None, HC:None, MOI:None}
+        self.limitData = s.value('limit', defaultLimit)
+#         for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (HC, 'hc'), (MOI, 'moi')):
+#             self.limitData[graphId] = (int(s.value(text+'Min')), int(s.value(text+'Max'))) if s.value(text+'Min') else None
         
         s.endGroup()
         s.beginGroup('connexion')
@@ -280,17 +281,18 @@ class TemperatureViewer(QMainWindow):
         s.setValue('dialogChoiceState', self.choiceAction.isChecked())
         s.setValue('dialogChoiceGeometry', self.dialogChoice.geometry())
         s.setValue('date', self.dateEdit.date())
+        s.setValue('limit', self.limitData)
         s.setValue('lineStyle', self.lineStyleData)
         s.beginGroup('limit')
         
-        for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (HC, 'hc'), (MOI, 'moi')):
-            d = self.limitData[graphId]
-            if d:
-                s.setValue(text+'Min', d[0])
-                s.setValue(text+'Max', d[1])
-            else:
-                s.setValue(text+'Min', None)
-                s.setValue(text+'Max', None)
+#         for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (HC, 'hc'), (MOI, 'moi')):
+#             d = self.limitData[graphId]
+#             if d:
+#                 s.setValue(text+'Min', d[0])
+#                 s.setValue(text+'Max', d[1])
+#             else:
+#                 s.setValue(text+'Min', None)
+#                 s.setValue(text+'Max', None)
                 
     def slotCanvasPressed(self, e):
         self.canvas.setFocus()
@@ -339,10 +341,15 @@ class TemperatureViewer(QMainWindow):
     
     def slotYlim(self):
         dlg = DialogLimit(self, self.limitData)
+        dlg.applied.connect(self.slotYlimApplied)
         if dlg.exec_():
             self.limitData = dlg.getData()
             print self.limitData
-            self.run()
+            self.run(False)
+            
+    def slotYlimApplied(self, limitData):
+        self.limitData = limitData
+        self.run(False)
     
     def slotCalendar(self):
         self.canvas.setFocus()
@@ -350,9 +357,14 @@ class TemperatureViewer(QMainWindow):
         
     def slotLineStyle(self):
         dlg = DialogLineStyle(self, self.lineStyleData)
+        dlg.applied.connect(self.slotLineStyleApplied)
         if dlg.exec_():
             self.lineStyleData = dlg.getData()
-            self.run()
+            self.run(False)
+    
+    def slotLineStyleApplied(self, lineStyleData):
+        self.lineStyleData = lineStyleData
+        self.run(False)
     
     def setupUi(self):
         def addGlobalAction(seq, slot):
