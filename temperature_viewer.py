@@ -34,12 +34,15 @@ class TemperatureViewer(QMainWindow):
         self.lineStyleData = {}
         self.lineList = []
         self.ax = None
-#         self.ax = self.axMillis = self.axPchauf = self.axMoi = None
         self.show()
-        self.dialogChoice = DialogChoice(self)
+        self.dialogChoice = DialogChoice(self, self.choiceAction)
         self.dialogChoice.checked.connect(self.slotGraphChecked)
+        self.dialogLimit = self.dialogLineStyle = None
         self.readSettings()
         self._isConnected = self.connectDb()
+    
+#     def test(self):
+#         print 'reject'
     
     def readSettings(self):
         s = QSettings()
@@ -227,7 +230,6 @@ class TemperatureViewer(QMainWindow):
             return False
     
     def slotChoice(self):
-        print 'choice', self.choiceAction.isChecked()
         if self.choiceAction.isChecked():
             self.dialogChoice.show()
         else:
@@ -339,28 +341,59 @@ class TemperatureViewer(QMainWindow):
             self.setPeriod(period)  
             self.run()
     
-    def slotYlim(self):
-        dlg = DialogLimit(self, self.limitData)
-        dlg.applied.connect(self.slotYlimApplied)
-        if dlg.exec_():
-            self.limitData = dlg.getData()
-            print self.limitData
-            self.run(False)
-            
-    def slotYlimApplied(self, limitData):
-        self.limitData = limitData
-        self.run(False)
+    
     
     def slotCalendar(self):
         self.canvas.setFocus()
         self.run()
+    
+    
+    def slotLimit(self):
+        if self.dialogLimit:
+            self.dialogLimit.reject()
+            self.dialogLimit = None
+        else:
+            self.dialogLimit = dlg = DialogLimit(self, self.limitData)
+            dlg.accepted.connect(self.slotLimitAccepted)
+            dlg.rejected.connect(self.slotLimitRejected)
+            dlg.applied.connect(self.slotLimitApplied)
+            dlg.show()
+            
+    def slotLimitAccepted(self):
+        self.limitAction.setChecked(False)
+        self.limitData = self.dialogLimit.getData()
+        self.dialogLimit = None
+        self.run(False)
+    
+    def slotLimitRejected(self):
+        self.limitAction.setChecked(False)
+        self.dialogLimit = None
+    
+    def slotLimitApplied(self, limitData):
+        self.limitData = limitData
+        self.run(False)
         
+                    
     def slotLineStyle(self):
-        dlg = DialogLineStyle(self, self.lineStyleData)
-        dlg.applied.connect(self.slotLineStyleApplied)
-        if dlg.exec_():
-            self.lineStyleData = dlg.getData()
-            self.run(False)
+        if self.dialogLineStyle:
+            self.dialogLineStyle.reject()
+            self.dialogLineStyle = None
+        else:
+            self.dialogLineStyle = dlg = DialogLineStyle(self, self.lineStyleData)
+            dlg.accepted.connect(self.slotLineStyleAccepted)
+            dlg.rejected.connect(self.slotLineStyleRejected)
+            dlg.applied.connect(self.slotLineStyleApplied)
+            dlg.show()
+    
+    def slotLineStyleAccepted(self):
+        self.lineStyleAction.setChecked(False)
+        self.lineStyleData = self.dialogLineStyle.getData()
+        self.dialogLineStyle = None
+        self.run(False)
+    
+    def slotLineStyleRejected(self):
+        self.lineStyleAction.setChecked(False)
+        self.dialogLineStyle = None
     
     def slotLineStyleApplied(self, lineStyleData):
         self.lineStyleData = lineStyleData
@@ -387,8 +420,9 @@ class TemperatureViewer(QMainWindow):
         previousAction = QAction(QIcon(":/icon/previous"), u"Date précédante", self, triggered=self.slotPreviousDate)
         nextAction = QAction(QIcon(":/icon/next"), u"Date suivante", self, triggered=self.slotNextDate)
         self.choiceAction = QAction(QIcon(":/icon/check"), u"Choix des graphiques", self, triggered=self.slotChoice, checkable=True)
-        yLimAction = QAction(QIcon(":/icon/slider"), u"Échelles", self, triggered=self.slotYlim)
-        lineStyleAction = QAction(QIcon(":/icon/line"), u"Style de lignes", self, triggered=self.slotLineStyle)
+        self.limitAction = QAction(QIcon(":/icon/slider"), u"Échelles", self, triggered=self.slotLimit)
+        self.lineStyleAction = QAction(QIcon(":/icon/line"), u"Style de lignes", self, triggered=self.slotLineStyle)
+        self.lineStyleAction.setCheckable(True)
         addGlobalAction(Qt.CTRL + Qt.Key_Space, self.slotToggleChoiceCheck)
         addGlobalAction(Qt.Key_Left, self.slotPreviousDate)
         addGlobalAction(Qt.Key_Right, self.slotNextDate)
@@ -415,8 +449,8 @@ class TemperatureViewer(QMainWindow):
         toolbar.addAction(previousAction)
         toolbar.addAction(nextAction)
         toolbar.addSeparator()
-        toolbar.addAction(yLimAction)
-        toolbar.addAction(lineStyleAction)
+        toolbar.addAction(self.limitAction)
+        toolbar.addAction(self.lineStyleAction)
         self.addToolBar(toolbar)
         
         self.fig = Figure(facecolor=(1,1,1), edgecolor=(0,0,0))

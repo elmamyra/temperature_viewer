@@ -6,9 +6,10 @@ from widget import Separator
 
 class DialogChoice(QDialog):
     checked = Signal()
-    def __init__(self, parent=None):
+    def __init__(self, parent, action):
         QDialog.__init__(self, parent)
         self.setWindowTitle('Choix des graphiques')
+        self.action = action
         self.group = QButtonGroup(self)
         self.group.setExclusive(False)
         self._geometry = None
@@ -33,8 +34,10 @@ class DialogChoice(QDialog):
         return [self.group.id(btn) for btn in self.group.buttons() if btn.isChecked()]
     
     def closeEvent(self, evt):
+        self.action.setChecked(False)
         self._geometry = self.geometry()
         
     def showEvent(self, evt):
+        self.action.setChecked(True)
         if self._geometry:
             self.setGeometry(self._geometry)
