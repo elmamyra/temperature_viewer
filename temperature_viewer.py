@@ -50,7 +50,7 @@ class TemperatureViewer(QMainWindow):
         
         s.beginGroup('limit')
         self.limitData = {}
-        for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (MOI, 'moi')):
+        for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (HC, 'hc'), (MOI, 'moi')):
             self.limitData[graphId] = (int(s.value(text+'Min')), int(s.value(text+'Max'))) if s.value(text+'Min') else None
         
         s.endGroup()
@@ -168,7 +168,7 @@ class TemperatureViewer(QMainWindow):
         checkedGraph = self.dialogChoice.getChecked()
         if not checkedGraph:
             return
-        specialGraph = (MILLIS, PCHAUF, MOI)
+        specialGraph = (MILLIS, PCHAUF, HC, MOI)
         
         offset = 0
         patchs = []
@@ -267,7 +267,7 @@ class TemperatureViewer(QMainWindow):
         s.setValue('dialogChoiceState', self.choiceAction.isChecked())
         s.setValue('dialogChoiceGeometry', self.dialogChoice.geometry())
         s.beginGroup('limit')
-        for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (MOI, 'moi')):
+        for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (HC, 'hc'), (MOI, 'moi')):
             d = self.limitData[graphId]
             if d:
                 s.setValue(text+'Min', d[0])
