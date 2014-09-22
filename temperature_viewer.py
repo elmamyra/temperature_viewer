@@ -45,7 +45,8 @@ class TemperatureViewer(QMainWindow):
             self.choiceAction.setChecked(True)
             self.dialogChoice.show()
         self.dialogChoice.setGeometry(s.value('dialogChoiceGeometry', self.dialogChoice.geometry()))
-            
+        
+        
         self.restoreGeometry(s.value('geometry', self.saveGeometry()))
         
         s.beginGroup('limit')
@@ -80,8 +81,11 @@ class TemperatureViewer(QMainWindow):
             self.conn = MySQLdb.connect(self.connData['host'], self.connData['user'], self.connData['passwd'], 
                                         self.connData['db'], unix_socket="/opt/lampp/var/mysql/mysql.sock")
             self.cur = self.conn.cursor()
-            qdateTimeMin = QDate.fromString(str(self.getFirstDate()), "yyyy-MM-dd")
-            self.dateEdit.setMinimumDate(qdateTimeMin)
+            
+            qdateMin = QSettings().value('date') or QDate.fromString(str(self.getFirstDate()), "yyyy-MM-dd")
+            self.dateEdit.setDate(QSettings().value('date') or qdateMin)
+#             qdateTimeMin = QDate.fromString(str(self.getFirstDate()), "yyyy-MM-dd")
+            self.dateEdit.setMinimumDate(qdateMin)
             return True
         except MySQLdb.Error, e:
             err = "Error {}: {}".format(e.args[0], e.args[1])
@@ -271,7 +275,9 @@ class TemperatureViewer(QMainWindow):
         s.setValue('geometry', self.saveGeometry())
         s.setValue('dialogChoiceState', self.choiceAction.isChecked())
         s.setValue('dialogChoiceGeometry', self.dialogChoice.geometry())
+        s.setValue('date', self.dateEdit.date())
         s.beginGroup('limit')
+        
         for graphId, text in ((TEMP, 'temp'), (MILLIS, 'millis'), (PCHAUF, 'pchauf'), (HC, 'hc'), (MOI, 'moi')):
             d = self.limitData[graphId]
             if d:
