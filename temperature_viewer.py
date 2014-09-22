@@ -218,10 +218,15 @@ class TemperatureViewer(QMainWindow):
             return False
     
     def slotChoice(self):
+        print 'choice', self.choiceAction.isChecked()
         if self.choiceAction.isChecked():
             self.dialogChoice.show()
         else:
             self.dialogChoice.close()
+            
+    def slotToggleChoiceCheck(self):
+        self.choiceAction.toggle()
+        self.slotChoice()
             
     def slotPeriodChanged(self, index):
         self.run()
@@ -277,6 +282,7 @@ class TemperatureViewer(QMainWindow):
                 s.setValue(text+'Max', None)
                 
     def slotCanvasPressed(self, e):
+        self.canvas.setFocus()
         if e.xdata and int(e.xdata) and e.button == 3:
             dt = QDateTime.fromTime_t(mdates.num2epoch(e.xdata)).date()
             monday = QDate(dt)
@@ -328,6 +334,7 @@ class TemperatureViewer(QMainWindow):
             self.run()
     
     def slotCalendar(self):
+        self.canvas.setFocus()
         self.run()
     
     def setupUi(self):
@@ -354,7 +361,7 @@ class TemperatureViewer(QMainWindow):
         
         yLimAction = QAction(QIcon(":/icon/slider"), u"Échelles", self, triggered=self.slotYlim)
 #         buttonChoice = QPushButton('Tables', clicked=self.slotChoice)
-        addGlobalAction(Qt.CTRL + Qt.Key_Space, self.slotChoice)
+        addGlobalAction(Qt.CTRL + Qt.Key_Space, self.slotToggleChoiceCheck)
         addGlobalAction(Qt.Key_Left, self.slotPreviousDate)
         addGlobalAction(Qt.Key_Right, self.slotNextDate)
         self.comboPeriod = QComboBox()
