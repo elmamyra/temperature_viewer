@@ -82,9 +82,9 @@ class TemperatureViewer(QMainWindow):
                                         self.connData['db'], unix_socket="/opt/lampp/var/mysql/mysql.sock")
             self.cur = self.conn.cursor()
             
-            qdateMin = QSettings().value('date') or QDate.fromString(str(self.getFirstDate()), "yyyy-MM-dd")
+            qdateMin = QDate.fromString(str(self.getFirstDate()), "yyyy-MM-dd")
             self.dateEdit.setDate(QSettings().value('date') or qdateMin)
-#             qdateTimeMin = QDate.fromString(str(self.getFirstDate()), "yyyy-MM-dd")
+            print qdateMin
             self.dateEdit.setMinimumDate(qdateMin)
             return True
         except MySQLdb.Error, e:
